@@ -8,9 +8,8 @@ If you want complete Bitcoin experience in Python, consult
 [python-bitcoinlib](https://github.com/petertodd/python-bitcoinlib) .
 
 ## Installation
-Package is not hosted on PyPI (yet), so you need to install it from GitHub.
 ```bash
-$ pip install git+https://github.com/bibajz/bitcoin-python-async-rpc.git@v0.1.0
+$ pip install bitcoinrpc
 ```
 
 ## Usage

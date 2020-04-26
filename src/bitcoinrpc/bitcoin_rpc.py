@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, TypeVar, Union
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
 import httpx
 
@@ -44,13 +44,21 @@ class BitcoinRPC:
         return self._client
 
     async def acall(
-        self, method: str, params: List[Union[str, int, List[str], None]]
+        self,
+        method: str,
+        params: List[Union[str, int, List[str], None]],
+        **kwargs: Any,
     ) -> JSONData:
+        """
+        Pass keyword arguments to directly modify the constructed request -
+            see `httpx.Request`.
+        """
         req = self.client.post(
             url=self.url,
             data=orjson.dumps(
                 {"jsonrpc": "2.0", "id": "1", "method": method, "params": params}
             ),
+            **kwargs,
         )
         resp = orjson.loads((await req).content)
 
@@ -90,31 +98,66 @@ class BitcoinRPC:
         return await self.acall("getblockheader", [block_hash, verbose])
 
     async def getblockstats(
-        self, hash_or_height: Union[int, str], *keys: str
+        self,
+        hash_or_height: Union[int, str],
+        *keys: str,
+        timeout: Optional[float] = None,
     ) -> JSONData:
-        return await self.acall("getblockstats", [hash_or_height, list(keys) or None])
+        """
+        Enter `keys` as positional arguments to return only the provided `keys`
+            in the response.
+        """
+        return await self.acall(
+            "getblockstats",
+            [hash_or_height, list(keys) or None],
+            timeout=httpx.Timeout(timeout),
+        )
 
     async def getblock(
-        self, block_hash: str, verbosity: Literal[0, 1, 2] = 1
+        self,
+        block_hash: str,
+        verbosity: Literal[0, 1, 2] = 1,
+        timeout: Optional[float] = None,
     ) -> JSONData:
-        return await self.acall("getblock", [block_hash, verbosity])
+        """
+        `verbosity`: 0 for hex-encoded block data, 1 for block data with transactions
+            list, 2 for block data with each transaction.
+        """
+        return await self.acall(
+            "getblock", [block_hash, verbosity], timeout=httpx.Timeout(timeout)
+        )
 
     async def getrawtransaction(
-        self, txid: str, verbose: bool = True, block_hash: Optional[str] = None
+        self,
+        txid: str,
+        verbose: bool = True,
+        block_hash: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> JSONData:
         """
         :param txid: If transaction is not in mempool, block_hash must also be provided.
         :param verbose: True for JSON, False for hex-encoded
         :param block_hash: see ^txid
+        :param timeout: If doing a lot of processing, no timeout may come in handy
         """
-        return await self.acall("getrawtransaction", [txid, verbose, block_hash])
+        return await self.acall(
+            "getrawtransaction",
+            [txid, verbose, block_hash],
+            timeout=httpx.Timeout(timeout),
+        )
 
     async def getnetworkhashps(
-        self, nblocks: int = -1, height: Optional[int] = None
+        self,
+        nblocks: int = -1,
+        height: Optional[int] = None,
+        timeout: Optional[float] = None,
     ) -> float:
         """
         :param nblocks: -1 for estimated hash power since last difficulty change,
             otherwise as an average over last provided number of blocks
         :param height: If not provided, get estimated hash power for the latest block
+        :param timeout: If doing a lot of processing, no timeout may come in handy
         """
-        return await self.acall("getnetworkhashps", [nblocks, height])
+        return await self.acall(
+            "getnetworkhashps", [nblocks, height], timeout=httpx.Timeout(timeout)
+        )
