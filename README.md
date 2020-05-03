@@ -12,6 +12,43 @@ If you want complete Bitcoin experience in Python, consult
 $ pip install bitcoinrpc
 ```
 
+## Supported methods
+Here is a list of supported methods, divided by their categories. Should you need
+method not implemented, wrap the call in `BitcoinRPC.acall(<your_method>, ...)` coroutine.
+
+### Blockchain
+
+|   Method   |   Supported?     |
+|------------|:----------------:|
+| `getbestblockhash` | ✔ |
+| `getblock` | ✔ |
+| `getblockchaininfo` | ✔ |
+| `getblockhash` | ✔ |
+| `getblockheader` | ✔ |
+| `getblockstats` | ✔ |
+| `getdifficulty` | ✔ |
+| `getmempoolinfo` | ✔ |
+| `getnetworkhashps` | ✔ |
+
+### Mining
+
+|   Method   |   Supported?     |
+|------------|:----------------:|
+| `getmininginfo` | ✔ |
+
+### Network
+
+|   Method   |   Supported?     |
+|------------|:----------------:|
+| `getconnectioncount` | ✔ |
+| `getnetworkinfo` | ✔ |
+
+### Raw transactions
+
+|   Method   |   Supported?     |
+|------------|:----------------:|
+| `getrawtransaction` | ✔ |
+
 ## Usage
 Minimal illustration (assuming Python 3.8, where you can run `async` code in console)
 
