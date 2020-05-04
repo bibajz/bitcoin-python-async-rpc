@@ -82,7 +82,7 @@ class BitcoinRPC:
     async def getconnectioncount(self) -> int:
         return await self.acall("getconnectioncount", [])
 
-    async def getdifficulty(self) -> str:
+    async def getdifficulty(self) -> float:
         return await self.acall("getdifficulty", [])
 
     async def getbestblockhash(self) -> str:
@@ -92,9 +92,6 @@ class BitcoinRPC:
         return await self.acall("getblockhash", [height,])
 
     async def getblockheader(self, block_hash: str, verbose: bool = True) -> JSONData:
-        """
-        Equivalent to `getblock` with verbosity 1.
-        """
         return await self.acall("getblockheader", [block_hash, verbose])
 
     async def getblockstats(
