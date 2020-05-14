@@ -5,7 +5,7 @@ Serves as a tiny layer between an application and a Bitcoin daemon, its primary 
 is querying the current state of Bitcoin blockchain, network stats, transactions...
 
 If you want complete Bitcoin experience in Python, consult
-[python-bitcoinlib](https://github.com/petertodd/python-bitcoinlib) .
+[python-bitcoinlib](https://github.com/petertodd/python-bitcoinlib).
 
 ## Installation
 ```bash
@@ -26,6 +26,7 @@ method not implemented, wrap the call in `BitcoinRPC.acall(<your_method>, ...)` 
 | `getblockhash` | ✔ |
 | `getblockheader` | ✔ |
 | `getblockstats` | ✔ |
+| `getchaintips` | ✔ |
 | `getdifficulty` | ✔ |
 | `getmempoolinfo` | ✔ |
 | `getnetworkhashps` | ✔ |

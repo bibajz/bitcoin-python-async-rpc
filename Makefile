@@ -1,8 +1,11 @@
+RM := rm -rf
+
 all: clean
 
+.PHONY: clean
 clean:
 	@echo Cleaning crew has arrived!
-	@rm -rf .mypy_cache .eggs build dist */*.egg-info
-	@rm -f *.py[co] */*.py[co] */*/*.py[co]
-	@rm -f *.so */*.so */*/*.so */*/*/*.so
-	@rm -f *.c */*.c */*/*.c */*/*/*.c
+	$(RM) .mypy_cache .coverage .eggs build dist */*.egg-info
+	$(RM) *.py[co] */*.py[co] */*/*.py[co]
+	$(RM) *.so */*.so */*/*.so */*/*/*.so
+	$(RM) *.c */*.c */*/*.c */*/*/*.c

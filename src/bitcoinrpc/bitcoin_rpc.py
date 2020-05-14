@@ -82,6 +82,9 @@ class BitcoinRPC:
     async def getconnectioncount(self) -> int:
         return await self.acall("getconnectioncount", [])
 
+    async def getchaintips(self) -> JSONData:
+        return await self.acall("getchaintips", [])
+
     async def getdifficulty(self) -> float:
         return await self.acall("getdifficulty", [])
 
