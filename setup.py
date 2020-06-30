@@ -42,6 +42,7 @@ setup(
     long_description=get_long_description("README.md"),
     long_description_content_type="text/markdown",
     keywords="bitcoin async json-rpc",
+    license="MIT",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",

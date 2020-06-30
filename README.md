@@ -62,3 +62,6 @@ $ python -m asyncio
 >>> await rpc.getconnectioncount()
 10
 ```
+
+## License
+MIT
