@@ -1,13 +1,27 @@
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import Any, List, Optional, Union
 
 import httpx
-
 import orjson
-
 from typing_extensions import Literal
 
-
-JSONData = TypeVar("JSONData", str, int, float, Dict, List, None)
+from ._types import (
+    BestBlockHash,
+    BitcoinRPCResponse,
+    Block,
+    BlockchainInfo,
+    BlockCount,
+    BlockHash,
+    BlockHeader,
+    BlockStats,
+    ChainTips,
+    ConnectionCount,
+    Difficulty,
+    MempoolInfo,
+    MiningInfo,
+    NetworkHashps,
+    NetworkInfo,
+    RawTransaction,
+)
 
 
 class RPCError(Exception):
@@ -17,8 +31,10 @@ class RPCError(Exception):
 
 
 class BitcoinRPC:
+    __slots__ = ("_url", "_client")
     """
-    Visit https://bitcoin.org/en/developer-reference for list of all commands
+    For list of all available commands, visit:
+    https://developer.bitcoin.org/reference/rpc/index.html
     """
 
     def __init__(self, host: str, port: int, rpc_user: str, rpc_password: str) -> None:
@@ -48,7 +64,7 @@ class BitcoinRPC:
         method: str,
         params: List[Union[str, int, List[str], None]],
         **kwargs: Any,
-    ) -> JSONData:
+    ) -> BitcoinRPCResponse:
         """
         Pass keyword arguments to directly modify the constructed request -
             see `httpx.Request`.
@@ -67,43 +83,61 @@ class BitcoinRPC:
         else:
             return resp["result"]
 
-    async def getmempoolinfo(self) -> JSONData:
+    async def getmempoolinfo(self) -> MempoolInfo:
+        """https://developer.bitcoin.org/reference/rpc/getmempoolinfo.html"""
         return await self.acall("getmempoolinfo", [])
 
-    async def getmininginfo(self) -> JSONData:
+    async def getmininginfo(self) -> MiningInfo:
+        """https://developer.bitcoin.org/reference/rpc/getmininginfo.html"""
         return await self.acall("getmininginfo", [])
 
-    async def getnetworkinfo(self) -> JSONData:
+    async def getnetworkinfo(self) -> NetworkInfo:
+        """https://developer.bitcoin.org/reference/rpc/getnetworkinfo.html"""
         return await self.acall("getnetworkinfo", [])
 
-    async def getblockchaininfo(self) -> JSONData:
+    async def getblockchaininfo(self) -> BlockchainInfo:
+        """https://developer.bitcoin.org/reference/rpc/getblockchaininfo.html"""
         return await self.acall("getblockchaininfo", [])
 
-    async def getconnectioncount(self) -> int:
+    async def getconnectioncount(self) -> ConnectionCount:
+        """https://developer.bitcoin.org/reference/rpc/getconnectioncount.html"""
         return await self.acall("getconnectioncount", [])
 
-    async def getchaintips(self) -> JSONData:
+    async def getchaintips(self) -> ChainTips:
+        """https://developer.bitcoin.org/reference/rpc/getchaintips.html"""
         return await self.acall("getchaintips", [])
 
-    async def getdifficulty(self) -> float:
+    async def getdifficulty(self) -> Difficulty:
+        """https://developer.bitcoin.org/reference/rpc/getdifficulty.html"""
         return await self.acall("getdifficulty", [])
 
-    async def getbestblockhash(self) -> str:
+    async def getbestblockhash(self) -> BestBlockHash:
+        """https://developer.bitcoin.org/reference/rpc/getbestblockhash.html"""
         return await self.acall("getbestblockhash", [])
 
-    async def getblockhash(self, height: int) -> str:
-        return await self.acall("getblockhash", [height,])
+    async def getblockhash(self, height: int) -> BlockHash:
+        """https://developer.bitcoin.org/reference/rpc/getblockhash.html"""
+        return await self.acall("getblockhash", [height])
 
-    async def getblockheader(self, block_hash: str, verbose: bool = True) -> JSONData:
+    async def getblockcount(self) -> BlockCount:
+        """https://developer.bitcoin.org/reference/rpc/getblockcount.html"""
+        return await self.acall("getblockcount", [])
+
+    async def getblockheader(
+        self, block_hash: str, verbose: bool = True
+    ) -> BlockHeader:
+        """https://developer.bitcoin.org/reference/rpc/getblockheader.html"""
         return await self.acall("getblockheader", [block_hash, verbose])
 
     async def getblockstats(
         self,
         hash_or_height: Union[int, str],
         *keys: str,
-        timeout: Optional[float] = None,
-    ) -> JSONData:
+        timeout: Optional[float] = 5.0,
+    ) -> BlockStats:
         """
+        https://developer.bitcoin.org/reference/rpc/getblockstats.html
+
         Enter `keys` as positional arguments to return only the provided `keys`
             in the response.
         """
@@ -117,11 +151,13 @@ class BitcoinRPC:
         self,
         block_hash: str,
         verbosity: Literal[0, 1, 2] = 1,
-        timeout: Optional[float] = None,
-    ) -> JSONData:
+        timeout: Optional[float] = 5.0,
+    ) -> Block:
         """
-        `verbosity`: 0 for hex-encoded block data, 1 for block data with transactions
-            list, 2 for block data with each transaction.
+        https://developer.bitcoin.org/reference/rpc/getblock.html
+
+        :param verbosity: 0 for hex-encoded block data, 1 for block data with
+            transactions list, 2 for block data with each transaction.
         """
         return await self.acall(
             "getblock", [block_hash, verbosity], timeout=httpx.Timeout(timeout)
@@ -132,11 +168,13 @@ class BitcoinRPC:
         txid: str,
         verbose: bool = True,
         block_hash: Optional[str] = None,
-        timeout: Optional[float] = None,
-    ) -> JSONData:
+        timeout: Optional[float] = 5.0,
+    ) -> RawTransaction:
         """
+        https://developer.bitcoin.org/reference/rpc/getrawtransactiono.html
+
         :param txid: If transaction is not in mempool, block_hash must also be provided.
-        :param verbose: True for JSON, False for hex-encoded
+        :param verbose: True for JSON, False for hex-encoded string
         :param block_hash: see ^txid
         :param timeout: If doing a lot of processing, no timeout may come in handy
         """
@@ -150,9 +188,11 @@ class BitcoinRPC:
         self,
         nblocks: int = -1,
         height: Optional[int] = None,
-        timeout: Optional[float] = None,
-    ) -> float:
+        timeout: Optional[float] = 5.0,
+    ) -> NetworkHashps:
         """
+        https://developer.bitcoin.org/reference/rpc/getnetworkhashps.html
+
         :param nblocks: -1 for estimated hash power since last difficulty change,
             otherwise as an average over last provided number of blocks
         :param height: If not provided, get estimated hash power for the latest block

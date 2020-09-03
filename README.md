@@ -23,6 +23,7 @@ method not implemented, wrap the call in `BitcoinRPC.acall(<your_method>, ...)` 
 | `getbestblockhash` | ✔ |
 | `getblock` | ✔ |
 | `getblockchaininfo` | ✔ |
+| `getblockcount` | ✔ |
 | `getblockhash` | ✔ |
 | `getblockheader` | ✔ |
 | `getblockstats` | ✔ |
