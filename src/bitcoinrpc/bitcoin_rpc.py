@@ -1,3 +1,4 @@
+import itertools
 from typing import Any, List, Optional, Union
 
 import httpx
@@ -22,6 +23,10 @@ from ._types import (
     NetworkInfo,
     RawTransaction,
 )
+
+# Neat trick found in asyncio library for task enumeration
+# https://github.com/python/cpython/blob/3.8/Lib/asyncio/tasks.py#L31
+_next_rpc_id = itertools.count(1).__next__
 
 
 class RPCError(Exception):
@@ -72,7 +77,12 @@ class BitcoinRPC:
         req = self.client.post(
             url=self.url,
             data=orjson.dumps(
-                {"jsonrpc": "2.0", "id": "1", "method": method, "params": params}
+                {
+                    "jsonrpc": "2.0",
+                    "id": _next_rpc_id(),
+                    "method": method,
+                    "params": params,
+                }
             ),
             **kwargs,
         )
