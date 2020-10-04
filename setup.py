@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 from typing import List
 
-from setuptools import find_namespace_packages, setup
+from setuptools import setup
 
 
 def get_version(package: str) -> str:
@@ -57,6 +57,6 @@ setup(
     author="Libor Martinek",
     author_email="libasmartinek@protonmail.com",
     package_dir={"": "src"},
-    packages=find_namespace_packages(where="src"),
+    packages=["bitcoinrpc"],
     install_requires=get_requirements("requirements.txt"),
 )
