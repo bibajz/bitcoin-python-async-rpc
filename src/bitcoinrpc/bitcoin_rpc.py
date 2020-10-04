@@ -5,6 +5,7 @@ import httpx
 import orjson
 from typing_extensions import Literal
 
+from ._exceptions import ImproperlyConfigured, RPCError
 from ._types import (
     BestBlockHash,
     BitcoinRPCResponse,
@@ -29,12 +30,6 @@ from ._types import (
 _next_rpc_id = itertools.count(1).__next__
 
 
-class RPCError(Exception):
-    def __init__(self, code: int, message: str) -> None:
-        self.code = code
-        self.message = message
-
-
 class BitcoinRPC:
     __slots__ = ("_url", "_client")
     """
@@ -42,19 +37,41 @@ class BitcoinRPC:
     https://developer.bitcoin.org/reference/rpc/index.html
     """
 
-    def __init__(self, host: str, port: int, rpc_user: str, rpc_password: str) -> None:
+    def __init__(
+        self, host: str, port: int, rpc_user: str, rpc_password: str, **options: Any
+    ) -> None:
         self._url = self._set_url(host, port)
-        self._client = self._set_client(rpc_user, rpc_password)
+        self._client = self._configure_client(rpc_user, rpc_password, **options)
 
     @staticmethod
     def _set_url(host: str, port: int) -> str:
         return f"http://{host}:{port}"
 
     @staticmethod
-    def _set_client(rpc_user: str, rpc_password: str) -> httpx.AsyncClient:
-        return httpx.AsyncClient(
-            auth=(rpc_user, rpc_password), headers={"content-type": "application/json"}
-        )
+    def _configure_client(
+        rpc_user: str, rpc_password: str, **options: Any
+    ) -> httpx.AsyncClient:
+        """
+        Configure `httpx.AsyncClient`. If you choose to provide additional options, it
+        is your responsibility to conform to the `httpx.AsyncClient` interface.
+        """
+        auth = (rpc_user, rpc_password)
+        headers = {"content-type": "application/json"}
+
+        options = dict(options)
+        if not options:
+            return httpx.AsyncClient(auth=auth, headers=headers)
+
+        if "auth" in options:
+            raise ImproperlyConfigured("Authentication cannot be set via options!")
+
+        if "headers" in options:
+            _additional_headers = dict(options.pop("headers"))
+            headers.update(_additional_headers)
+            # guard against content-type overwrite
+            headers["content-type"] = "application/json"
+
+        return httpx.AsyncClient(auth=auth, headers=headers, **options)
 
     @property
     def url(self) -> str:
