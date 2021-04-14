@@ -81,6 +81,9 @@ class BitcoinRPC:
     def client(self) -> httpx.AsyncClient:
         return self._client
 
+    async def aclose(self) -> None:
+        await self.client.aclose()
+
     async def acall(
         self,
         method: str,
