@@ -1,5 +1,6 @@
 import itertools
-from typing import Any, List, Optional, Union
+from types import TracebackType
+from typing import Any, List, Optional, Type, Union
 
 import httpx
 import orjson
@@ -42,6 +43,17 @@ class BitcoinRPC:
     ) -> None:
         self._url = self._set_url(host, port)
         self._client = self._configure_client(rpc_user, rpc_password, **options)
+
+    async def __aenter__(self) -> "BitcoinRPC":
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: Type[BaseException],
+        exc_val: BaseException,
+        exc_tb: TracebackType,
+    ) -> None:
+        await self.aclose()
 
     @staticmethod
     def _set_url(host: str, port: int) -> str:
