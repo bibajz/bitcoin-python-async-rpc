@@ -108,7 +108,7 @@ class BitcoinRPC:
         """
         req = self.client.post(
             url=self.url,
-            data=orjson.dumps(
+            content=orjson.dumps(
                 {
                     "jsonrpc": "2.0",
                     "id": _next_rpc_id(),
