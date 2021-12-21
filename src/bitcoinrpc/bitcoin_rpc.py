@@ -56,8 +56,10 @@ class BitcoinRPC:
         await self.aclose()
 
     @staticmethod
-    def _set_url(host: str, port: int) -> str:
-        return f"http://{host}:{port}"
+    def _set_url(host: str, port: int, **options: Any) -> str:
+        if not 'http' in host:
+            return f"http://{host}:{port}"
+        return f"{host}:{port}"
 
     @staticmethod
     def _configure_client(
