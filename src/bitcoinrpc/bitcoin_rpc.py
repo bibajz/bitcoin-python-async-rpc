@@ -39,9 +39,13 @@ class BitcoinRPC:
     """
 
     def __init__(
-        self, host: str, port: int, rpc_user: str, rpc_password: str, **options: Any
+        self,
+        url: str,
+        rpc_user: str,
+        rpc_password: str,
+        **options: Any,
     ) -> None:
-        self._url = self._set_url(host, port)
+        self._url = url
         self._client = self._configure_client(rpc_user, rpc_password, **options)
 
     async def __aenter__(self) -> "BitcoinRPC":
@@ -54,10 +58,6 @@ class BitcoinRPC:
         exc_tb: TracebackType,
     ) -> None:
         await self.aclose()
-
-    @staticmethod
-    def _set_url(host: str, port: int) -> str:
-        return f"http://{host}:{port}"
 
     @staticmethod
     def _configure_client(
