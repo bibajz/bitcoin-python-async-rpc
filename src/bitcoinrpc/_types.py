@@ -145,7 +145,7 @@ class Block(_BlockHeader):
 
 
 class _RawTransaction(TypedDict):
-    """ Returned when verbose is set to `True`. Otherwise, `str` is returned """
+    """Returned when verbose is set to `True`. Otherwise, `str` is returned"""
 
     txid: str
     hash: str
