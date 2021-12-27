@@ -59,7 +59,7 @@ $ python -m asyncio
 >>> import asyncio
 >>>
 >>> from bitcoinrpc import BitcoinRPC
->>> rpc = BitcoinRPC("127.0.0.1", 8332, "rpc_user", "rpc_passwd")
+>>> rpc = BitcoinRPC("http://localhost:18443" "rpc_user", "rpc_passwd")
 >>> await rpc.getconnectioncount()
 10
 >>> await rpc.aclose()  # Clean-up resource
@@ -76,18 +76,24 @@ from bitcoinrpc import BitcoinRPC
 
 
 async def main():
-    async with BitcoinRPC("localhost", 18443, "rpc_user", "rpc_password") as rpc:
+    async with BitcoinRPC("http://localhost:18443", "rpc_user", "rpc_password") as rpc:
         print(await rpc.getconnectioncount())
 
 
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
 Running this script yields:
 ```
 $ python btc_rpc_minimal.py
 10
 ```
+
+## Changelog
+
+- **(UNRELEASED)** change the signature of `BitcoinRPC` from `host, port, ...` to `url, ...`, delegating the creation of the node url to the caller.
+
 
 ## License
 MIT
