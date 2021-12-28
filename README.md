@@ -92,7 +92,7 @@ $ python btc_rpc_minimal.py
 
 ## Changelog
 
-- **(UNRELEASED)** change the signature of `BitcoinRPC` from `host, port, ...` to `url, ...`, delegating the creation of the node url to the caller.
+- **2021/12/28 - 0.5.0** change the signature of `BitcoinRPC` from `host, port, ...` to `url, ...`, delegating the creation of the node url to the caller.
 
 
 ## License
