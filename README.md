@@ -90,10 +90,76 @@ $ python btc_rpc_minimal.py
 10
 ```
 
+## Testing
+
+A `Containerfile` is provided as a means to build an OCI image of a Bitcoin `regtest` node.
+Build the image (`podman` is used, but `docker` should be fine too):
+
+```
+$ podman build \
+  -f Containerfile \
+  --build-arg BTC_VERSION=v24.1 \
+  -t bitcoin-regtest:v24.1 \
+  -t bitcoin-regtest:latest \
+  .
+```
+
+and run it afterwards:
+
+```
+$ podman run \
+  --rm \
+  -it \
+  --mount=type=bind,src=./tests/bitcoin-regtest.conf,target=/home/rpc/.bitcoin/bitcoin.conf \
+  -p 127.0.0.1:18443:18443 \
+  --name bitcoin-regtest \
+  localhost/bitcoin-regtest:v24.1
+```
+
+which will expose the Bitcoin `regtest` node on port 18443, accesible from localhost only, with RPC user/password `rpc_user/rpc_password`.
+
+After you are done testing, stop the container via:
+
+```
+$ podman stop bitcoin-regtest
+```
+
+---
+
+If you want to test against a different version of Bitcoin node, pass a different [tag](https://github.com/bitcoin/bitcoin/tags) in the build stage:
+
+```
+$ podman build \
+  -f Containerfile \
+  --build-arg BTC_VERSION=v25.0 \
+  -t bitcoin-regtest:v25.0 \
+  -t bitcoin-regtest:latest \
+  .
+```
+
+---
+
+Different settings of the Bitcoin node may be passed via mounting your custom configuration file, or optionally as "arguments" to `podman run`:
+
+
+```
+$ podman run \
+  --rm \
+  -it \
+  --mount=type=bind,src=<path/to/your/config_file>,target=/home/rpc/.bitcoin/bitcoin.conf \
+  -p 127.0.0.1:18443:18443 \
+  --name bitcoin-regtest \
+  localhost/bitcoin-regtest:v24.1 <your> <args> ...
+```
+
+---
+
+Please, keep in mind that Bitcoin node compiled in the image is intended for testing & debugging purposes only! It may serve you as an inspiration for building
+your own, production-ready Bitcoin node, but its intended usage is testing!
+
 ## Changelog
 
 - **2021/12/28 - 0.5.0** change the signature of `BitcoinRPC` from `host, port, ...` to `url, ...`, delegating the creation of the node url to the caller.
-
 
 ## License
 MIT
