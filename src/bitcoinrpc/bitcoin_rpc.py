@@ -1,13 +1,13 @@
 import itertools
 from types import TracebackType
-from typing import Any, List, Optional, Type, Union
+from typing import Any, List, Optional, Tuple, Type, Union
 
 import httpx
 import orjson
-from typing_extensions import Literal
+from typing_extensions import Literal, Self
 
-from ._exceptions import ImproperlyConfigured, RPCError
-from ._types import (
+from bitcoinrpc._exceptions import RPCError
+from bitcoinrpc._types import (
     BestBlockHash,
     BitcoinRPCResponse,
     Block,
@@ -38,15 +38,9 @@ class BitcoinRPC:
     https://developer.bitcoin.org/reference/rpc/index.html
     """
 
-    def __init__(
-        self,
-        url: str,
-        rpc_user: str,
-        rpc_password: str,
-        **options: Any,
-    ) -> None:
+    def __init__(self, url: str, client: httpx.AsyncClient) -> None:
         self._url = url
-        self._client = self._configure_client(rpc_user, rpc_password, **options)
+        self._client = client
 
     async def __aenter__(self) -> "BitcoinRPC":
         return self
@@ -59,31 +53,25 @@ class BitcoinRPC:
     ) -> None:
         await self.aclose()
 
-    @staticmethod
-    def _configure_client(
-        rpc_user: str, rpc_password: str, **options: Any
-    ) -> httpx.AsyncClient:
+    @classmethod
+    def from_config(
+        cls,
+        url: str,
+        auth: Optional[Tuple[str, str]],
+        **options: Any,
+    ) -> Self:
         """
-        Configure `httpx.AsyncClient`. If you choose to provide additional options, it
-        is your responsibility to conform to the `httpx.AsyncClient` interface.
+        Instantiate the `BitcoinRPC` client while also configuring the underlying `httpx.AsyncClient`. Additional
+        options are passed directly as kwargs to `httpx.AsyncClient`, so it's your responsibility to conform to its
+        interface.
         """
-        auth = (rpc_user, rpc_password)
-        headers = {"content-type": "application/json"}
 
         options = dict(options)
-        if not options:
-            return httpx.AsyncClient(auth=auth, headers=headers)
-
-        if "auth" in options:
-            raise ImproperlyConfigured("Authentication cannot be set via options!")
-
-        if "headers" in options:
-            _additional_headers = dict(options.pop("headers"))
-            headers.update(_additional_headers)
-            # guard against content-type overwrite
-            headers["content-type"] = "application/json"
-
-        return httpx.AsyncClient(auth=auth, headers=headers, **options)
+        headers = {
+            "content-type": "application/json",
+            **dict(options.pop("headers", {})),
+        }
+        return cls(url, httpx.AsyncClient(auth=auth, headers=headers, **options))
 
     @property
     def url(self) -> str:
@@ -106,7 +94,7 @@ class BitcoinRPC:
         Pass keyword arguments to directly modify the constructed request -
             see `httpx.Request`.
         """
-        req = self.client.post(
+        req = await self.client.post(
             url=self.url,
             content=orjson.dumps(
                 {
@@ -118,7 +106,12 @@ class BitcoinRPC:
             ),
             **kwargs,
         )
-        resp = orjson.loads((await req).content)
+
+        # Raise an exception if return code is not in 2xx range
+        # https://www.python-httpx.org/quickstart/#exceptions
+        req.raise_for_status()
+
+        resp = orjson.loads(req.content)
 
         if resp["error"] is not None:
             raise RPCError(resp["error"]["code"], resp["error"]["message"])
