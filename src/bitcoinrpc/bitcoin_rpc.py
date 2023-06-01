@@ -1,6 +1,6 @@
 import itertools
 from types import TracebackType
-from typing import Any, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, List, Optional, Tuple, Type, Union
 
 import httpx
 import orjson
@@ -32,15 +32,27 @@ _next_rpc_id = itertools.count(1).__next__
 
 
 class BitcoinRPC:
-    __slots__ = ("_url", "_client")
+    __slots__ = ("_url", "_client", "_counter")
     """
+    Class representing a JSON-RPC client of a Bitcoin node.
+
+    :param url: URL of the Bitcoin node.
+    :param client: Underlying `httpx.AsyncClient`, which handles the requests issued.
+    :param counter: Optional callable that serves as a generator for the "id" field within JSON-RPC requests.
+
     For list of all available commands, visit:
     https://developer.bitcoin.org/reference/rpc/index.html
     """
 
-    def __init__(self, url: str, client: httpx.AsyncClient) -> None:
+    def __init__(
+        self,
+        url: str,
+        client: httpx.AsyncClient,
+        counter: Callable[[], Union[int, str]] = _next_rpc_id,
+    ) -> None:
         self._url = url
         self._client = client
+        self._counter = counter
 
     async def __aenter__(self) -> "BitcoinRPC":
         return self
@@ -94,12 +106,12 @@ class BitcoinRPC:
         Pass keyword arguments to directly modify the constructed request -
             see `httpx.Request`.
         """
-        req = await self.client.post(
+        response = await self.client.post(
             url=self.url,
             content=orjson.dumps(
                 {
                     "jsonrpc": "2.0",
-                    "id": _next_rpc_id(),
+                    "id": self._counter(),
                     "method": method,
                     "params": params,
                 }
@@ -109,14 +121,13 @@ class BitcoinRPC:
 
         # Raise an exception if return code is not in 2xx range
         # https://www.python-httpx.org/quickstart/#exceptions
-        req.raise_for_status()
+        response.raise_for_status()
 
-        resp = orjson.loads(req.content)
-
-        if resp["error"] is not None:
-            raise RPCError(resp["error"]["code"], resp["error"]["message"])
+        content = orjson.loads(response.content)
+        if content["error"] is not None:
+            raise RPCError(content["error"]["code"], content["error"]["message"])
         else:
-            return resp["result"]
+            return content["result"]
 
     async def getmempoolinfo(self) -> MempoolInfo:
         """https://developer.bitcoin.org/reference/rpc/getmempoolinfo.html"""
