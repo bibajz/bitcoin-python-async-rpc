@@ -50,5 +50,5 @@ WORKDIR /home/rpc
 # Default data directory when running the bitcoin daemon on regtest
 RUN mkdir -p .bitcoin/regtest
 
-ENTRYPOINT ["/usr/local/bin/bitcoind", "-server"]
+ENTRYPOINT ["/usr/local/bin/bitcoind", "-regtest", "-server"]
 
