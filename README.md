@@ -217,7 +217,7 @@ If you do not want to run tests marked as `"integration"`, which denote those re
 
 ## Changelog
 
-- **UNRELEASED - 0.6.0**:
+- **2023/06/01 - 0.6.0**:
   * `BitcoinRPC` is now instantiated with a `httpx.AsyncClient` directly and an optional `counter` argument, which is a callable that may be used for distinguishing
     the JSON-RPC requests. Old-style instantiation, with `url` and optional user/password tuple, is kept within `BitcoinRPC.from_config` method.
   
