@@ -49,7 +49,19 @@ method not implemented, wrap the call in `BitcoinRPC.acall(<your_method>, ...)` 
 
 |   Method   |   Supported?     |
 |------------|:----------------:|
+| `analyzepsbt` | ✔ |
+| `combinepsbt` | ✔ |
+| `decodepsbt` | ✔ |
+| `finalizepsbt` | ✔ |
 | `getrawtransaction` | ✔ |
+| `joinpsbts` | ✔ |
+| `utxoupdatepsbt` | ✔ |
+
+### Wallet
+
+|   Method   |   Supported?     |
+|------------|:----------------:|
+| `walletprocesspsbt` | ✔ |
 
 ## Usage
 Minimal illustration (assuming Python 3.8+, where you can run `async` code in console)
@@ -59,7 +71,7 @@ $ python -m asyncio
 >>> import asyncio
 >>>
 >>> from bitcoinrpc import BitcoinRPC
->>> rpc = BitcoinRPC.from_config("http://localhost:18443" ("rpc_user", "rpc_passwd"))
+>>> rpc = BitcoinRPC.from_config("http://localhost:18443", ("rpc_user", "rpc_passwd"))
 >>> await rpc.getconnectioncount()
 10
 >>> await rpc.aclose()  # Clean-up resource
@@ -217,10 +229,11 @@ If you do not want to run tests marked as `"integration"`, which denote those re
 
 ## Changelog
 
+- **2023/06/04 - 0.6.1**: Add RPC methods, mainly concerned with PSBTs
 - **2023/06/01 - 0.6.0**:
   * `BitcoinRPC` is now instantiated with a `httpx.AsyncClient` directly and an optional `counter` argument, which is a callable that may be used for distinguishing
     the JSON-RPC requests. Old-style instantiation, with `url` and optional user/password tuple, is kept within `BitcoinRPC.from_config` method.
-  
+
 - **2021/12/28 - 0.5.0** change the signature of `BitcoinRPC` from `host, port, ...` to `url, ...`, delegating the creation of the node url to the caller.
 
 ## License
