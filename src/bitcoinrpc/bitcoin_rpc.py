@@ -1,6 +1,6 @@
 import itertools
 from types import TracebackType
-from typing import Any, Callable, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import httpx
 import orjson
@@ -8,6 +8,7 @@ from typing_extensions import Literal, Self
 
 from bitcoinrpc._exceptions import RPCError
 from bitcoinrpc._types import (
+    AnalyzePSBT,
     BestBlockHash,
     BitcoinRPCResponse,
     Block,
@@ -17,13 +18,20 @@ from bitcoinrpc._types import (
     BlockHeader,
     BlockStats,
     ChainTips,
+    CombinePSBT,
     ConnectionCount,
+    DecodePSBT,
     Difficulty,
+    FinalizePSBT,
+    JoinPSBTs,
+    JSONType,
     MempoolInfo,
     MiningInfo,
     NetworkHashps,
     NetworkInfo,
     RawTransaction,
+    UtxoUpdatePSBT,
+    WalletProcessPSBT,
 )
 
 # Neat trick found in asyncio library for task enumeration
@@ -99,7 +107,7 @@ class BitcoinRPC:
     async def acall(
         self,
         method: str,
-        params: List[Union[str, int, List[str], None]],
+        params: List[JSONType],
         **kwargs: Any,
     ) -> BitcoinRPCResponse:
         """
@@ -246,4 +254,81 @@ class BitcoinRPC:
         """
         return await self.acall(
             "getnetworkhashps", [nblocks, height], timeout=httpx.Timeout(timeout)
+        )
+
+    async def analyzepsbt(self, psbt: str) -> AnalyzePSBT:
+        """
+        https://developer.bitcoin.org/reference/rpc/analyzepsbt.html
+
+        :param psbt: base64 string of a partially signed bitcoin transaction
+        """
+        return await self.acall("analyzepsbt", [psbt])
+
+    async def combinepsbt(self, *psbts: str) -> CombinePSBT:
+        """
+        https://developer.bitcoin.org/reference/rpc/combinepsbt.html
+
+        :param psbts: base64 strings, each representing a partially signed bitcoin transaction
+        """
+        return await self.acall("combinepsbt", list(psbts))
+
+    async def decodepsbt(self, psbt: str) -> DecodePSBT:
+        """
+        https://developer.bitcoin.org/reference/rpc/decodepsbt.html
+
+        :param psbt: base64 string of a partially signed bitcoin transaction
+        """
+        return await self.acall("decodepsbt", [psbt])
+
+    async def finalizepsbt(self, psbt: str, extract: bool = True) -> FinalizePSBT:
+        """
+        https://developer.bitcoin.org/reference/rpc/finalizepsbt.html
+
+        :param psbt: base64 string of a partially signed bitcoin transaction
+        :param extract: If set to true and the transaction is complete, return a hex-encoded network transaction
+        """
+        return await self.acall("finalizepsbt", [psbt, extract])
+
+    async def joinpsbts(self, *psbts: str) -> JoinPSBTs:
+        """
+        https://developer.bitcoin.org/reference/rpc/joinpsbts.html
+
+        :param psbts: base64 strings, each representing a partially signed bitcoin transaction
+        """
+        return await self.acall("joinpsbts", list(psbts))
+
+    async def utxoupdatepsbt(
+        self,
+        psbt: str,
+        descriptors: Optional[List[Union[str, Dict[str, Union[int, str]]]]] = None,
+    ) -> UtxoUpdatePSBT:
+        """
+        https://developer.bitcoin.org/reference/rpc/utxoupdatepsbt.html
+
+        :param psbt: base64 string of a partially signed bitcoin transaction
+        :param extract: If set to true and the transaction is complete, return a hex-encoded network transaction
+        """
+        if descriptors is not None:
+            params = [psbt, descriptors]
+        else:
+            params = [psbt]
+        return await self.acall("utxoupdatepsbt", params)  # type: ignore
+
+    async def walletprocesspsbt(
+        self,
+        psbt: str,
+        sign: bool = True,
+        sighashtype: str = "ALL",
+        bip32_derivs: bool = True,
+    ) -> WalletProcessPSBT:
+        """
+        https://developer.bitcoin.org/reference/rpc/walletprocesspsbt.html
+
+        :param psbt: base64 string of a partially signed bitcoin transaction
+        :param sign: Sign the transaction too when updating
+        :param sighashtype: signature hash type to sign, if it is not specified by PSBT.
+        :param bip32_derivs: include bip32 derivation paths for pubkeys if known
+        """
+        return await self.acall(
+            "walletprocesspsbt", [psbt, sign, sighashtype, bip32_derivs]
         )
