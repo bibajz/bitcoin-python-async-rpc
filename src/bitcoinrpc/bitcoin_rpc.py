@@ -1,7 +1,6 @@
 import itertools
 from types import TracebackType
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
-from asgiref.sync import async_to_sync
 
 import httpx
 import orjson
@@ -173,18 +172,10 @@ class BitcoinRPC:
     async def getblockhash(self, height: int) -> BlockHash:
         """https://developer.bitcoin.org/reference/rpc/getblockhash.html"""
         return await self.acall("getblockhash", [height])
-    
-    def sync_getblockhash(self, height: int) -> BlockHash:
-        """https://developer.bitcoin.org/reference/rpc/getblockhash.html"""
-        async_to_sync(self.getblockhash(height=height))
 
     async def getblockcount(self) -> BlockCount:
         """https://developer.bitcoin.org/reference/rpc/getblockcount.html"""
         return await self.acall("getblockcount", [])
-    
-    def sync_getblockcount(self) -> BlockCount:
-        """https://developer.bitcoin.org/reference/rpc/getblockcount.html"""
-        return async_to_sync(self.getblockcount())
 
     async def getblockheader(
         self, block_hash: str, verbose: bool = True
@@ -225,20 +216,6 @@ class BitcoinRPC:
         return await self.acall(
             "getblock", [block_hash, verbosity], timeout=httpx.Timeout(timeout)
         )
-    
-    def sync_getblock(
-        self,
-        block_hash: str,
-        verbosity: Literal[0, 1, 2] = 1,
-        timeout: Optional[float] = 5.0,
-    ) -> Block:
-        """
-        https://developer.bitcoin.org/reference/rpc/getblock.html
-
-        :param verbosity: 0 for hex-encoded block data, 1 for block data with
-            transactions list, 2 for block data with each transaction.
-        """
-        return async_to_sync(self.getblock(block_hash, verbosity, timeout))
 
     async def getrawtransaction(
         self,
