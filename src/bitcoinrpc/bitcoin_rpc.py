@@ -132,7 +132,7 @@ class BitcoinRPC:
         response.raise_for_status()
 
         content = orjson.loads(response.content)
-        if content["error"] is not None:
+        if content.get("error") is not None:
             raise RPCError(content["error"]["code"], content["error"]["message"])
         else:
             return content["result"]
