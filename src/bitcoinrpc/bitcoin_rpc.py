@@ -34,9 +34,14 @@ from bitcoinrpc._types import (
     WalletProcessPSBT,
 )
 
+
 # Neat trick found in asyncio library for task enumeration
-# https://github.com/python/cpython/blob/3.8/Lib/asyncio/tasks.py#L31
-_next_rpc_id = itertools.count(1).__next__
+# https://github.com/python/cpython/blob/v3.12.2/Lib/asyncio/tasks.py#L33
+#
+# However, it's necessary to instantiate a new counter object for each instantiation of `BitcoinRPC`
+# object, the snippet from standard library is a global counter.
+def _next_request_id_factory() -> Callable[[], int]:
+    return itertools.count(1).__next__
 
 
 class BitcoinRPC:
@@ -56,11 +61,15 @@ class BitcoinRPC:
         self,
         url: str,
         client: httpx.AsyncClient,
-        counter: Callable[[], Union[int, str]] = _next_rpc_id,
+        counter: Optional[Callable[[], Any]] = None,
     ) -> None:
         self._url = url
         self._client = client
-        self._counter = counter
+
+        if counter is None:
+            self._counter = _next_request_id_factory()
+        else:
+            self._counter = counter
 
     async def __aenter__(self) -> "BitcoinRPC":
         return self
@@ -91,7 +100,7 @@ class BitcoinRPC:
             "content-type": "application/json",
             **dict(options.pop("headers", {})),
         }
-        return cls(url, httpx.AsyncClient(auth=auth, headers=headers, **options))
+        return cls(url, client=httpx.AsyncClient(auth=auth, headers=headers, **options))
 
     @property
     def url(self) -> str:
