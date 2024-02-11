@@ -3,7 +3,7 @@ from typing import Any, Dict
 import httpx
 import pytest
 
-from bitcoinrpc import BitcoinRPC
+from bitcoinrpc import BitcoinRPC, RPCError
 
 
 @pytest.mark.asyncio
@@ -46,13 +46,23 @@ async def test_connection_and_sample_rpc(rpc_config: Dict[str, Any]) -> None:
 @pytest.mark.integration
 @pytest.mark.asyncio
 async def test_connection_and_incorrect_rpc(rpc_config: Dict[str, Any]) -> None:
-    """
-    Incorrect values of arguments will not raise the `bitcoinrpc.RPCError`, but server error 500.
-    """
     btc_rpc = BitcoinRPC.from_config(**rpc_config)
 
-    with pytest.raises(httpx.HTTPStatusError) as e:
+    with pytest.raises(RPCError) as e:
         await btc_rpc.getblockheader("???")
 
-    # 500 - Internal server error
-    assert e.value.response.status_code == 500
+    assert e.value.error == {
+        "code": -8,
+        "message": "hash must be of length 64 (not 3, for '???')",
+    }
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_connection_and_nonexistent_rpc(rpc_config: Dict[str, Any]) -> None:
+    btc_rpc = BitcoinRPC.from_config(**rpc_config)
+
+    with pytest.raises(RPCError) as e:
+        await btc_rpc.acall("non-existent-method", [])
+
+    assert e.value.error == {"code": -32601, "message": "Method not found"}
