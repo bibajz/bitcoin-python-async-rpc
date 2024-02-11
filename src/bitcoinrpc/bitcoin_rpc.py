@@ -1,12 +1,13 @@
 import itertools
 from types import TracebackType
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
 import httpx
 import orjson
 from typing_extensions import Literal, Self
 
 from bitcoinrpc._exceptions import RPCError
+from bitcoinrpc._spec import RequestId, Response, ResponseError, ResponseSuccess
 from bitcoinrpc._types import (
     AnalyzePSBT,
     BestBlockHash,
@@ -40,7 +41,7 @@ from bitcoinrpc._types import (
 #
 # However, it's necessary to instantiate a new counter object for each instantiation of `BitcoinRPC`
 # object, the snippet from standard library is a global counter.
-def _next_request_id_factory() -> Callable[[], int]:
+def _next_request_id_factory() -> Callable[[], RequestId]:
     return itertools.count(1).__next__
 
 
@@ -61,7 +62,7 @@ class BitcoinRPC:
         self,
         url: str,
         client: httpx.AsyncClient,
-        counter: Optional[Callable[[], Any]] = None,
+        counter: Optional[Callable[[], RequestId]] = None,
     ) -> None:
         self._url = url
         self._client = client
@@ -136,15 +137,27 @@ class BitcoinRPC:
             **kwargs,
         )
 
-        # Raise an exception if return code is not in 2xx range
-        # https://www.python-httpx.org/quickstart/#exceptions
-        response.raise_for_status()
+        # Response may be empty, due to for example failed authentication.
+        if response.content == b"":
+            response.raise_for_status()
 
-        content = orjson.loads(response.content)
+        content: Response = orjson.loads(response.content)
+        # Based on the presence of "error" key in the deserialized dictionary
+        # and its value, either:
+        #   - throw an `RPCError` exception containing the `id` of the request and
+        #     the data under "error" key, or
+        #   - if "error" key is not present or is `None`, meaning we are on the
+        #     success path, return the data under "result" key.
+        #
+        # Apologies for such ugly code, the `type: ignore` parts and `cast` are
+        # present because `mypy` is unable to distinguish the constituents of the
+        # `._spec.Response` union type based on the `content.get("error")`...
         if content.get("error") is not None:
-            raise RPCError(content["error"]["code"], content["error"]["message"])
+            _error: ResponseError = content  # type: ignore
+            raise RPCError(id=content["id"], error=_error["error"])
         else:
-            return content["result"]
+            _success: ResponseSuccess = content  # type: ignore
+            return cast(BitcoinRPCResponse, _success["result"])
 
     async def getmempoolinfo(self) -> MempoolInfo:
         """https://developer.bitcoin.org/reference/rpc/getmempoolinfo.html"""
