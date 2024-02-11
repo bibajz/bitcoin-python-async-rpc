@@ -229,6 +229,13 @@ If you do not want to run tests marked as `"integration"`, which denote those re
 
 ## Changelog
 
+- **2024/02/12 - 0.7.0**: More robust handling of JSON-RPC 2.0 specification (thanks https://github.com/joxerx !)
+  * **Breaking change**: change the handling of responses with non-2xx status codes in 'BitcoinRPC.acall'.
+    Previously, said errors would be raised directly via the `httpx.Response.raise_for_status` method.
+    Now, `httpx.Response.raise_for_status` is used only when the server
+    returns an empty response, which may happen due to for example bad
+    authentication. In all other cases, defer the decision whether RPC
+    call was a success or a failure to the inspection of return JSON.
 - **2023/06/04 - 0.6.1**: Add RPC methods, mainly concerned with PSBTs
 - **2023/06/01 - 0.6.0**:
   * `BitcoinRPC` is now instantiated with a `httpx.AsyncClient` directly and an optional `counter` argument, which is a callable that may be used for distinguishing
