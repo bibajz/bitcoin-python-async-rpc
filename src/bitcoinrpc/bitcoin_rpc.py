@@ -247,7 +247,7 @@ class BitcoinRPC:
         timeout: Optional[float] = 5.0,
     ) -> RawTransaction:
         """
-        https://developer.bitcoin.org/reference/rpc/getrawtransactiono.html
+        https://developer.bitcoin.org/reference/rpc/getrawtransaction.html
 
         :param txid: If transaction is not in mempool, block_hash must also be provided.
         :param verbose: True for JSON, False for hex-encoded string
